@@ -121,6 +121,7 @@ function bind() {
     "volumechange",
   ] as const)
     v.addEventListener(e, () => report(v));
+  report(v);
   v.addEventListener(
     "ended",
     () => {

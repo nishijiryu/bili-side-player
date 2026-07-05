@@ -49,7 +49,18 @@ function App() {
   }, [s, ready]);
   useEffect(() => {
     const f = (m: any) => {
-      if (m.type === "PLAYER_STATE") setPlayer((x) => ({ ...x, ...m }));
+      if (m.type === "PLAYER_STATE") {
+        setPlayer((x) => ({ ...x, ...m }));
+        if (typeof m.volume === "number" && typeof m.muted === "boolean")
+          setS((state) => ({
+            ...state,
+            settings: {
+              ...state.settings,
+              volume: m.volume,
+              muted: m.muted,
+            },
+          }));
+      }
       if (m.type === "TRACK_CHANGED")
         setS((state) => ({ ...state, currentTrackId: m.trackId }));
     };
