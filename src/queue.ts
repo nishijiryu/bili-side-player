@@ -1,0 +1,2 @@
+import type {PlayMode,Track} from './types';
+export function nextIndex(tracks:Track[],current:number,mode:PlayMode,direction:1|-1=1,random=Math.random){if(!tracks.length)return null;if(mode==='loop-one'&&direction===1)return current;if(mode==='shuffle'){if(tracks.length===1)return 0;let n=current;while(n===current)n=Math.floor(random()*tracks.length);return n;}const n=current+direction;if(n>=0&&n<tracks.length)return n;if(mode==='loop-list')return(n+tracks.length)%tracks.length;return null;}

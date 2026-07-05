@@ -1,0 +1,2 @@
+import{describe,expect,it}from'vitest';import{nextIndex}from'./queue';const t=[0,1,2].map(x=>({id:String(x)})) as any;
+describe('queue',()=>{it('stops sequentially',()=>expect(nextIndex(t,2,'sequential')).toBeNull());it('wraps list',()=>expect(nextIndex(t,2,'loop-list')).toBe(0));it('repeats one',()=>expect(nextIndex(t,1,'loop-one')).toBe(1));it('shuffles to another',()=>expect(nextIndex(t,1,'shuffle',1,()=>0)).toBe(0));it('repeats a sole shuffled track',()=>expect(nextIndex(t.slice(0,1),0,'shuffle')).toBe(0))});

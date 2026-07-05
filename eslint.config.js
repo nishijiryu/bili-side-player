@@ -1,0 +1,3 @@
+import tseslint from 'typescript-eslint';
+import hooks from 'eslint-plugin-react-hooks';
+export default tseslint.config({ignores:['dist']},{files:['**/*.{ts,tsx}'],extends:[...tseslint.configs.recommended],plugins:{'react-hooks':hooks},rules:{...hooks.configs.recommended.rules,'@typescript-eslint/no-explicit-any':'off','@typescript-eslint/no-unused-expressions':'off'}});

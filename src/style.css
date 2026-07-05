@@ -1,0 +1,286 @@
+:root {
+  font: 14px system-ui;
+  color: #e8eaf0;
+  background: #11131a;
+  color-scheme: dark;
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+}
+main {
+  padding: 14px;
+  min-width: 280px;
+  max-width: 600px;
+  height: 100vh;
+  height: 100dvh;
+  margin: auto;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+header,
+.row,
+.now,
+.controls > div,
+li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+header {
+  justify-content: space-between;
+}
+h1 {
+  font-size: 18px;
+}
+.status {
+  font-size: 11px;
+  padding: 4px 8px;
+  border-radius: 99px;
+  background: #363a48;
+}
+.playing {
+  background: #116847;
+}
+.failed {
+  background: #8a3030;
+}
+.now {
+  padding: 12px;
+  background: #1c1f29;
+  border-radius: 12px;
+  margin: 8px 0;
+}
+.now img,
+.cover {
+  width: 64px;
+  height: 64px;
+  border-radius: 8px;
+  object-fit: cover;
+}
+.cover {
+  display: grid;
+  place-items: center;
+  background: #343847;
+  font-size: 28px;
+}
+.now div:last-child {
+  min-width: 0;
+}
+.now strong,
+.now small,
+.title b,
+.title small {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.now small,
+.title small {
+  color: #aeb3c2;
+  margin-top: 3px;
+}
+.controls,
+section {
+  margin: 10px 0;
+}
+.controls > div {
+  justify-content: center;
+}
+.controls label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 9px 0;
+}
+.controls input[type="range"] {
+  flex: 1;
+  min-width: 60px;
+}
+button,
+.button,
+select,
+input {
+  border: 1px solid #3a3f50;
+  background: #242834;
+  color: inherit;
+  border-radius: 7px;
+  padding: 7px;
+}
+button,
+.button {
+  cursor: pointer;
+}
+button:hover,
+.button:hover {
+  background: #34394a;
+}
+button:focus-visible,
+input:focus-visible,
+select:focus-visible {
+  outline: 2px solid #69a7ff;
+  outline-offset: 2px;
+}
+button:disabled {
+  opacity: 0.4;
+}
+.row {
+  flex-wrap: wrap;
+  margin: 8px 0;
+}
+.row select {
+  flex: 1;
+}
+.search {
+  width: 100%;
+  margin: 5px 0;
+}
+ol {
+  list-style: none;
+  padding: 0;
+  margin: 6px 0;
+}
+.track-list {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  padding-right: 3px;
+  scroll-behavior: smooth;
+}
+.playlist-section {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.playlist-section > .row,
+.playlist-section > .search {
+  flex: 0 0 auto;
+}
+.playlist-section > .empty {
+  flex: 1 1 auto;
+  overflow-y: auto;
+}
+li {
+  padding: 5px 0;
+  border-bottom: 1px solid #292d39;
+}
+.title {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-align: left;
+  min-width: 0;
+  background: transparent;
+  border: 0;
+}
+.track-cover {
+  width: 52px;
+  height: 34px;
+  flex: 0 0 52px;
+  object-fit: cover;
+  border-radius: 5px;
+  background: #343847;
+}
+.track-cover.placeholder {
+  display: grid;
+  place-items: center;
+  color: #aeb3c2;
+  font-size: 17px;
+}
+.track-copy {
+  min-width: 0;
+  flex: 1;
+}
+.active {
+  background: #222e46;
+  border-radius: 7px;
+}
+.empty {
+  text-align: center;
+  color: #aeb3c2;
+  padding: 20px 5px;
+}
+.notice {
+  position: sticky;
+  bottom: 8px;
+  padding: 10px;
+  background: #365d92;
+  border-radius: 8px;
+  box-shadow: 0 4px 16px #0008;
+}
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: #05060ab8;
+}
+.add-modal {
+  width: min(100%, 420px);
+  max-height: min(80vh, 600px);
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+  margin: 0;
+  overflow: hidden;
+  border: 1px solid #444a5d;
+  border-radius: 12px;
+  background: #1c1f29;
+  box-shadow: 0 12px 40px #000b;
+}
+.add-modal h2 {
+  margin: 0 0 4px;
+  font-size: 18px;
+}
+.add-modal p {
+  margin: 4px 0 10px;
+  color: #aeb3c2;
+}
+.playlist-options {
+  min-height: 0;
+  overflow-y: auto;
+}
+.playlist-options label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 6px;
+  border-bottom: 1px solid #292d39;
+}
+.playlist-options label span {
+  flex: 1;
+}
+.playlist-options small {
+  color: #aeb3c2;
+}
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding-top: 12px;
+}
+@media (max-width: 340px) {
+  main {
+    padding: 8px;
+  }
+  button,
+  .button,
+  select,
+  input {
+    padding: 6px 5px;
+  }
+  li {
+    gap: 3px;
+  }
+}

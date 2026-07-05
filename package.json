@@ -1,0 +1,32 @@
+{
+  "name": "bili-side-player",
+  "version": "1.0.0",
+  "license": "MIT",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "typecheck": "tsc -b --pretty false",
+    "lint": "eslint .",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "react": "latest",
+    "react-dom": "latest"
+  },
+  "devDependencies": {
+    "@types/chrome": "latest",
+    "@types/node": "latest",
+    "@types/react": "latest",
+    "@types/react-dom": "latest",
+    "@vitejs/plugin-react": "latest",
+    "eslint": "latest",
+    "eslint-plugin-react-hooks": "latest",
+    "prettier": "^3.9.4",
+    "typescript": "latest",
+    "typescript-eslint": "latest",
+    "vite": "latest",
+    "vitest": "latest"
+  }
+}
