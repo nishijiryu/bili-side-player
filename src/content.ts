@@ -22,6 +22,7 @@ function playerSnapshot(v: HTMLVideoElement) {
     duration: Number.isFinite(v.duration) ? v.duration : 0,
     volume: v.volume,
     muted: v.muted,
+    playbackRate: v.playbackRate,
   };
 }
 function metadata() {
@@ -135,6 +136,7 @@ function bind() {
     "timeupdate",
     "durationchange",
     "volumechange",
+    "ratechange",
   ] as const)
     v.addEventListener(e, () => report(v));
   report(v);
@@ -194,6 +196,8 @@ chrome.runtime.onMessage.addListener((m: any, _s, reply) => {
         v.volume = m.value;
         v.muted = m.muted;
       }
+      if (m.command === "rate")
+        v.playbackRate = Math.max(0.1, Math.min(16, Number(m.value) || 1));
       reply({ ok: true });
     }
     return m.command === "play";

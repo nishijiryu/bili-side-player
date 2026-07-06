@@ -11,7 +11,7 @@ body {
   margin: 0;
 }
 main {
-  padding: 14px;
+  padding: 12px;
   min-width: 280px;
   max-width: 600px;
   height: 100vh;
@@ -35,6 +35,7 @@ header {
 }
 h1 {
   font-size: 18px;
+  margin: 8px 0;
 }
 .status {
   font-size: 11px;
@@ -50,9 +51,10 @@ h1 {
 }
 .now {
   padding: 12px;
-  background: #1c1f29;
-  border-radius: 12px;
-  margin: 8px 0;
+  background: linear-gradient(145deg, #202532, #191c25);
+  border: 1px solid #303545;
+  border-radius: 14px;
+  margin: 6px 0 8px;
 }
 .now img,
 .cover {
@@ -86,16 +88,49 @@ h1 {
 }
 .controls,
 section {
-  margin: 10px 0;
+  margin: 6px 0;
 }
-.controls > div {
+.controls {
+  padding: 10px 12px;
+  border: 1px solid #2d3240;
+  border-radius: 14px;
+  background: #181b24;
+}
+.controls > .transport {
   justify-content: center;
+  gap: 14px;
+}
+.transport button {
+  width: 42px;
+  height: 36px;
+  font-size: 16px;
+}
+.transport button:nth-child(2) {
+  width: 48px;
+  height: 42px;
+  border: 0;
+  border-radius: 50%;
+  color: #10131a;
+  background: #79adff;
+}
+.transport button:nth-child(2):hover {
+  background: #9ac2ff;
 }
 .controls label {
   display: flex;
   align-items: center;
   gap: 6px;
   margin: 9px 0;
+}
+.controls .progress-control {
+  margin: 10px 0 7px;
+}
+.progress-control span {
+  min-width: 76px;
+  color: #aeb3c2;
+  font-size: 11px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
 }
 .controls input[type="range"] {
   flex: 1;
@@ -135,9 +170,114 @@ button:disabled {
 .row select {
   flex: 1;
 }
+.foldout {
+  margin-top: 8px;
+  border-top: 1px solid #2d3240;
+}
+.foldout summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 2px 2px;
+  color: #b9bfce;
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+}
+.foldout summary::-webkit-details-marker {
+  display: none;
+}
+.foldout summary::before {
+  content: "›";
+  color: #79adff;
+  font-size: 18px;
+  line-height: 1;
+  transition: transform 0.15s ease;
+}
+.foldout[open] summary::before {
+  transform: rotate(90deg);
+}
+.foldout summary span {
+  margin-left: auto;
+  color: #858c9d;
+  font-size: 12px;
+}
+.settings-grid {
+  display: grid;
+  gap: 8px;
+  padding: 8px 0 2px;
+}
+.controls .volume-control {
+  margin: 0;
+}
+.volume-control > span,
+.speed-control > span {
+  width: 34px;
+  color: #aeb3c2;
+}
+.speed-control,
+.play-options {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.speed-control output {
+  min-width: 42px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+.play-options select {
+  flex: 1;
+}
+.controls .play-options label {
+  margin: 0;
+  white-space: nowrap;
+}
+.playlist-heading {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin: 3px 0 5px;
+}
+.playlist-heading > span {
+  color: #aeb3c2;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+}
+.playlist-heading select {
+  flex: 1;
+  min-width: 0;
+  font-weight: 600;
+}
+.playlist-tools {
+  flex: 0 0 auto;
+  margin: 0 0 5px;
+  border-top: 0;
+  border-bottom: 1px solid #292d39;
+}
+.playlist-tools summary {
+  padding: 5px 2px 8px;
+}
+.tool-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 0 0 7px 18px;
+}
+.tool-group + .tool-group {
+  padding-top: 1px;
+}
+.tool-group button,
+.tool-group .button {
+  flex: 1 1 auto;
+  text-align: center;
+}
 .search {
   width: 100%;
-  margin: 5px 0;
+  margin: 4px 0 5px;
+  padding: 9px 10px;
+  background: #1a1e27;
 }
 ol {
   list-style: none;
@@ -161,6 +301,8 @@ ol {
   overflow: hidden;
 }
 .playlist-section > .row,
+.playlist-section > .playlist-heading,
+.playlist-section > .playlist-tools,
 .playlist-section > .search {
   flex: 0 0 auto;
 }

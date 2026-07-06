@@ -21,6 +21,7 @@ function App() {
       duration: 0,
       volume: 1,
       muted: false,
+      playbackRate: 1,
     });
   const [pendingAdd, setPendingAdd] = useState<{
     label: string;
@@ -232,7 +233,7 @@ function App() {
         </div>
       </section>
       <section className="controls">
-        <div>
+        <div className="transport">
           <button aria-label="上一首" onClick={() => skip(-1)}>
             ⏮
           </button>
@@ -246,8 +247,7 @@ function App() {
             ⏭
           </button>
         </div>
-        <label>
-          进度{" "}
+        <label className="progress-control">
           <input
             type="range"
             min="0"
@@ -259,57 +259,94 @@ function App() {
             {fmt(player.currentTime)}/{fmt(player.duration)}
           </span>
         </label>
-        <label>
-          音量{" "}
-          <input
-            type="range"
-            min="0"
-            max="1"
-            step=".01"
-            value={s.settings.volume}
-            onChange={(e) => {
-              const v = +e.target.value;
-              update((x) => (x.settings.volume = v));
-              cmd("volume", v, s.settings.muted);
-            }}
-          />
-          <button
-            aria-label="静音"
-            onClick={() => {
-              update((x) => (x.settings.muted = !x.settings.muted));
-              cmd("volume", s.settings.volume, !s.settings.muted);
-            }}
-          >
-            {s.settings.muted ? "🔇" : "🔊"}
-          </button>
-        </label>
-        <div className="row">
-          <select
-            aria-label="播放模式"
-            value={s.settings.playMode}
-            onChange={(e) =>
-              update((x) => (x.settings.playMode = e.target.value as any))
-            }
-          >
-            <option value="sequential">顺序</option>
-            <option value="loop-list">列表循环</option>
-            <option value="loop-one">单曲循环</option>
-            <option value="shuffle">随机</option>
-          </select>
-          <label>
-            <input
-              type="checkbox"
-              checked={s.settings.autoplay}
-              onChange={(e) =>
-                update((x) => (x.settings.autoplay = e.target.checked))
-              }
-            />{" "}
-            连续播放
-          </label>
-        </div>
+        <details className="foldout">
+          <summary>
+            播放设置
+            <span>{player.playbackRate.toFixed(1)}×</span>
+          </summary>
+          <div className="settings-grid">
+            <label className="volume-control">
+              <span>音量</span>
+              <input
+                type="range"
+                min="0"
+                max="1"
+                step=".01"
+                value={s.settings.volume}
+                onChange={(e) => {
+                  const v = +e.target.value;
+                  update((x) => (x.settings.volume = v));
+                  cmd("volume", v, s.settings.muted);
+                }}
+              />
+              <button
+                aria-label="静音"
+                onClick={() => {
+                  update((x) => (x.settings.muted = !x.settings.muted));
+                  cmd("volume", s.settings.volume, !s.settings.muted);
+                }}
+              >
+                {s.settings.muted ? "🔇" : "🔊"}
+              </button>
+            </label>
+            <div className="speed-control" aria-label="播放速度">
+              <span>倍速</span>
+              <button
+                aria-label="降低播放速度"
+                disabled={player.playbackRate <= 0.1}
+                onClick={() =>
+                  cmd(
+                    "rate",
+                    Math.max(0.1, +(player.playbackRate - 0.1).toFixed(1)),
+                  )
+                }
+              >
+                −
+              </button>
+              <output>{player.playbackRate.toFixed(1)}×</output>
+              <button
+                aria-label="提高播放速度"
+                disabled={player.playbackRate >= 16}
+                onClick={() =>
+                  cmd(
+                    "rate",
+                    Math.min(16, +(player.playbackRate + 0.1).toFixed(1)),
+                  )
+                }
+              >
+                +
+              </button>
+            </div>
+            <div className="play-options">
+              <select
+                aria-label="播放模式"
+                value={s.settings.playMode}
+                onChange={(e) =>
+                  update((x) => (x.settings.playMode = e.target.value as any))
+                }
+              >
+                <option value="sequential">顺序播放</option>
+                <option value="loop-list">列表循环</option>
+                <option value="loop-one">单曲循环</option>
+                <option value="shuffle">随机播放</option>
+              </select>
+              <label>
+                <input
+                  type="checkbox"
+                  checked={s.settings.autoplay}
+                  onChange={(e) =>
+                    update((x) => (x.settings.autoplay = e.target.checked))
+                  }
+                />
+                连续播放
+              </label>
+            </div>
+          </div>
+        </details>
       </section>
       <section className="playlist-section">
-        <div className="row">
+        <div className="playlist-heading">
+          <span>歌单</span>
           <select
             aria-label="当前歌单"
             value={p.id}
@@ -323,92 +360,135 @@ function App() {
               </option>
             ))}
           </select>
-          <button
-            onClick={() => {
-              const n = prompt("新歌单名称");
-              if (n)
-                update((x) =>
-                  x.playlists.push({
-                    id: uid(),
-                    name: n,
-                    tracks: [],
-                    createdAt: now(),
-                    updatedAt: now(),
+        </div>
+        <details className="foldout playlist-tools">
+          <summary>
+            歌单工具
+            <span>{p.tracks.length} 首</span>
+          </summary>
+          <div className="tool-group">
+            <button
+              onClick={() => {
+                const n = prompt("新歌单名称");
+                if (n)
+                  update((x) =>
+                    x.playlists.push({
+                      id: uid(),
+                      name: n,
+                      tracks: [],
+                      createdAt: now(),
+                      updatedAt: now(),
+                    }),
+                  );
+              }}
+            >
+              新建
+            </button>
+            <button
+              onClick={() => {
+                const n = prompt("重命名", p.name);
+                if (n)
+                  update(
+                    (x) => (x.playlists.find((y) => y.id === p.id)!.name = n),
+                  );
+              }}
+            >
+              改名
+            </button>
+            <button
+              disabled={s.playlists.length === 1}
+              onClick={() =>
+                confirm(`删除“${p.name}”？`) &&
+                update((x) => {
+                  x.playlists = x.playlists.filter((y) => y.id !== p.id);
+                  x.currentPlaylistId = x.playlists[0].id;
+                })
+              }
+            >
+              删除
+            </button>
+          </div>
+          <div className="tool-group">
+            <button
+              onClick={async () => {
+                try {
+                  const response = await chrome.runtime.sendMessage({
+                    type: "GET_BOUND_METADATA",
+                  });
+                  const m = response?.data;
+                  m
+                    ? add(m.url, m.title, m)
+                    : setNotice("当前页不是支持的视频页");
+                } catch {
+                  setNotice("请先打开 Bilibili 视频页");
+                }
+              }}
+            >
+              添加当前视频
+            </button>
+            <button
+              onClick={async () => {
+                try {
+                  const response = await chrome.runtime.sendMessage({
+                    type: "GET_BOUND_METADATA",
+                    collection: true,
+                  });
+                  const collection = response?.data;
+                  if (!collection?.tracks?.length)
+                    return setNotice("当前页面未检测到视频合集或多 P 列表");
+                  prepareAdd(collection.tracks, collection.title);
+                } catch {
+                  setNotice("请先打开包含合集的 Bilibili 视频页");
+                }
+              }}
+            >
+              添加当前合集
+            </button>
+            <button
+              onClick={() => {
+                const u = prompt("粘贴 Bilibili 视频 URL");
+                if (u) add(u);
+              }}
+            >
+              粘贴 URL
+            </button>
+          </div>
+          <div className="tool-group">
+            <button
+              onClick={() => {
+                const b = new Blob([JSON.stringify(s.playlists, null, 2)], {
+                    type: "application/json",
                   }),
-                );
-            }}
-          >
-            新建
-          </button>
-          <button
-            onClick={() => {
-              const n = prompt("重命名", p.name);
-              if (n)
-                update(
-                  (x) => (x.playlists.find((y) => y.id === p.id)!.name = n),
-                );
-            }}
-          >
-            改名
-          </button>
-          <button
-            disabled={s.playlists.length === 1}
-            onClick={() =>
-              confirm(`删除“${p.name}”？`) &&
-              update((x) => {
-                x.playlists = x.playlists.filter((y) => y.id !== p.id);
-                x.currentPlaylistId = x.playlists[0].id;
-              })
-            }
-          >
-            删除
-          </button>
-        </div>
-        <div className="row">
-          <button
-            onClick={async () => {
-              try {
-                const response = await chrome.runtime.sendMessage({
-                  type: "GET_BOUND_METADATA",
-                });
-                const m = response?.data;
-                m
-                  ? add(m.url, m.title, m)
-                  : setNotice("当前页不是支持的视频页");
-              } catch {
-                setNotice("请先打开 Bilibili 视频页");
-              }
-            }}
-          >
-            添加当前视频
-          </button>
-          <button
-            onClick={async () => {
-              try {
-                const response = await chrome.runtime.sendMessage({
-                  type: "GET_BOUND_METADATA",
-                  collection: true,
-                });
-                const collection = response?.data;
-                if (!collection?.tracks?.length)
-                  return setNotice("当前页面未检测到视频合集或多 P 列表");
-                prepareAdd(collection.tracks, collection.title);
-              } catch {
-                setNotice("请先打开包含合集的 Bilibili 视频页");
-              }
-            }}
-          >
-            添加当前合集
-          </button>
-          <button
-            onClick={() => {
-              const u = prompt("粘贴 Bilibili 视频 URL");
-              if (u) add(u);
-            }}
-          >
-            粘贴 URL
-          </button>
-        </div>
+                  a = document.createElement("a");
+                a.href = URL.createObjectURL(b);
+                a.download = "bili-side-player-playlists.json";
+                a.click();
+                URL.revokeObjectURL(a.href);
+              }}
+            >
+              导出歌单
+            </button>
+            <label className="button">
+              导入歌单
+              <input
+                hidden
+                type="file"
+                accept="application/json"
+                onChange={async (e) => {
+                  try {
+                    const f = e.target.files?.[0];
+                    if (f) {
+                      const imported = importPlaylists(await f.text());
+                      update((x) => x.playlists.push(...imported));
+                    }
+                  } catch (err) {
+                    setNotice(String(err));
+                  }
+                }}
+              />
+            </label>
+          </div>
+        </details>
         <input
           className="search"
           placeholder="按标题或 UP 主搜索"
@@ -503,41 +583,6 @@ function App() {
             ))}
           </ol>
         )}
-        <div className="row">
-          <button
-            onClick={() => {
-              const b = new Blob([JSON.stringify(s.playlists, null, 2)], {
-                  type: "application/json",
-                }),
-                a = document.createElement("a");
-              a.href = URL.createObjectURL(b);
-              a.download = "bili-side-player-playlists.json";
-              a.click();
-              URL.revokeObjectURL(a.href);
-            }}
-          >
-            导出
-          </button>
-          <label className="button">
-            导入
-            <input
-              hidden
-              type="file"
-              accept="application/json"
-              onChange={async (e) => {
-                try {
-                  const f = e.target.files?.[0];
-                  if (f) {
-                    const imported = importPlaylists(await f.text());
-                    update((x) => x.playlists.push(...imported));
-                  }
-                } catch (err) {
-                  setNotice(String(err));
-                }
-              }}
-            />
-          </label>
-        </div>
       </section>
       {pendingAdd && (
         <div className="modal-backdrop" role="presentation">

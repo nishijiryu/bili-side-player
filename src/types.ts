@@ -35,12 +35,13 @@ export type PlayerState = {
   duration: number;
   volume: number;
   muted: boolean;
+  playbackRate: number;
   message?: string;
 };
 export type Command =
   | {
       type: "PLAYER_COMMAND";
-      command: "play" | "pause" | "seek" | "volume";
+      command: "play" | "pause" | "seek" | "volume" | "rate";
       value?: number;
       muted?: boolean;
     }
@@ -54,7 +55,7 @@ export type Command =
   | { type: "PLAY_TRACK"; track: Track; requestId: string }
   | {
       type: "CONTROL_PLAYER";
-      command: "play" | "pause" | "seek" | "volume";
+      command: "play" | "pause" | "seek" | "volume" | "rate";
       value?: number;
       muted?: boolean;
     }
