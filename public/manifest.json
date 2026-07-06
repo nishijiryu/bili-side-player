@@ -22,7 +22,6 @@
     }
   },
   "background": { "service_worker": "background.js", "type": "module" },
-  "side_panel": { "default_path": "index.html" },
   "content_scripts": [
     {
       "matches": ["https://www.bilibili.com/video/*"],

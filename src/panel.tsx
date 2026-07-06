@@ -39,12 +39,6 @@ function App() {
     });
   }, []);
   useEffect(() => {
-    // Signals to the background that the side panel is open; disconnecting on
-    // unload lets the background pause tab-controlling behavior once closed.
-    const port = chrome.runtime.connect({ name: "panel" });
-    return () => port.disconnect();
-  }, []);
-  useEffect(() => {
     if (ready) saveState(s).catch((e) => setNotice(String(e)));
   }, [s, ready]);
   useEffect(() => {
@@ -187,15 +181,11 @@ function App() {
     if (n != null) play(p.tracks[n]);
   };
   const cmd = (command: string, value?: number, muted?: boolean) =>
-    chrome.tabs.query({ active: true, currentWindow: true }).then(([t]) => {
-      if (t.id)
-        chrome.tabs
-          .sendMessage(t.id, { type: "PLAYER_COMMAND", command, value, muted })
-          .then((r: any) => {
-            if (!r?.ok) setNotice(r.error);
-          })
-          .catch(() => setNotice("页面未连接"));
-    });
+    chrome.runtime
+      .sendMessage({ type: "CONTROL_PLAYER", command, value, muted })
+      .then((r: any) => {
+        if (!r?.ok) setNotice(r?.error || "页面未连接");
+      });
   const filtered = useMemo(
     () =>
       p.tracks.filter((t) =>
@@ -359,15 +349,11 @@ function App() {
         <div className="row">
           <button
             onClick={async () => {
-              const [t] = await chrome.tabs.query({
-                active: true,
-                currentWindow: true,
-              });
-              if (!t.id) return;
               try {
-                const m = await chrome.tabs.sendMessage(t.id, {
-                  type: "GET_METADATA",
+                const response = await chrome.runtime.sendMessage({
+                  type: "GET_BOUND_METADATA",
                 });
+                const m = response?.data;
                 m
                   ? add(m.url, m.title, m)
                   : setNotice("当前页不是支持的视频页");
@@ -380,15 +366,12 @@ function App() {
           </button>
           <button
             onClick={async () => {
-              const [tab] = await chrome.tabs.query({
-                active: true,
-                currentWindow: true,
-              });
-              if (!tab.id) return;
               try {
-                const collection = await chrome.tabs.sendMessage(tab.id, {
-                  type: "GET_COLLECTION_METADATA",
+                const response = await chrome.runtime.sendMessage({
+                  type: "GET_BOUND_METADATA",
+                  collection: true,
                 });
+                const collection = response?.data;
                 if (!collection?.tracks?.length)
                   return setNotice("当前页面未检测到视频合集或多 P 列表");
                 prepareAdd(collection.tracks, collection.title);

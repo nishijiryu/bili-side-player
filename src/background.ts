@@ -2,55 +2,51 @@ import { loadState, saveState } from "./storage";
 import { nextIndex } from "./queue";
 import { isSameVideoEntry } from "./url";
 import type { Command } from "./types";
+import { getBoundTabId, setBoundTabId } from "./binding";
+
 chrome.runtime.onInstalled.addListener(() =>
-  chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true }),
+  chrome.sidePanel.setOptions({ enabled: false }),
 );
-// The panel opens a long-lived "panel" port while it is visible; it disconnects
-// when the side panel is closed. Only run tab-controlling behavior while open.
-let panelPorts = 0;
-chrome.runtime.onConnect.addListener((port) => {
-  if (port.name !== "panel") return;
-  panelPorts++;
-  port.onDisconnect.addListener(() => {
-    panelPorts = Math.max(0, panelPorts - 1);
+
+// Clicking the extension action explicitly binds the panel to that tab. The
+// per-tab side panel disappears on other tabs and reappears when returning.
+chrome.action.onClicked.addListener(async (tab) => {
+  if (!tab.id) return;
+  const previous = await getBoundTabId();
+  if (previous !== undefined && previous !== tab.id)
+    await chrome.sidePanel.setOptions({ tabId: previous, enabled: false });
+  await setBoundTabId(tab.id);
+  await chrome.sidePanel.setOptions({
+    tabId: tab.id,
+    path: "index.html",
+    enabled: true,
   });
+  await chrome.sidePanel.open({ tabId: tab.id });
 });
-const panelOpen = () => panelPorts > 0;
 let latestRequest: string = "";
 const ended = new Set<string>();
 async function play(track: any, requestId: string = crypto.randomUUID()) {
   latestRequest = requestId;
   const state = await loadState();
-  let tabId = state.managedTabId;
-  const tabs = await chrome.tabs.query({});
-  let created = false;
-  if (!tabId || !tabs.some((t) => t.id === tabId)) {
-    const active = (
-      await chrome.tabs.query({ active: true, currentWindow: true })
-    )[0];
-    if (active?.id && active.url?.startsWith("https://www.bilibili.com/video/"))
-      tabId = active.id;
-    else {
-      tabId = (await chrome.tabs.create({ url: track.url, active: true })).id;
-      created = true;
-    }
+  const tabId = await getBoundTabId();
+  if (tabId === undefined) throw new Error("请先点击扩展图标绑定当前标签页");
+  try {
+    const current = await chrome.tabs.get(tabId);
+    if (!isSameVideoEntry(current.url, track.url))
+      await chrome.tabs.update(tabId, { url: track.url });
+  } catch {
+    await setBoundTabId();
+    throw new Error("绑定的标签页已关闭，请重新点击扩展图标绑定");
   }
-  if (!created) {
-    const current = await chrome.tabs.get(tabId!);
-    if (isSameVideoEntry(current.url, track.url))
-      await chrome.tabs.update(tabId!, { active: true });
-    else await chrome.tabs.update(tabId!, { url: track.url, active: true });
-  }
-  state.managedTabId = tabId;
   state.currentTrackId = track.id;
   await saveState(state);
   chrome.runtime
     .sendMessage({ type: "TRACK_CHANGED", trackId: track.id })
     .catch(() => {});
-  await waitReady(tabId!, track.url, requestId);
+  await waitReady(tabId, track.url, requestId);
   if (requestId !== latestRequest) return;
   try {
-    const result = await chrome.tabs.sendMessage(tabId!, {
+    const result = await chrome.tabs.sendMessage(tabId, {
       type: "PLAYER_COMMAND",
       command: "play",
     });
@@ -82,7 +78,6 @@ async function waitReady(tabId: number, targetUrl: string, requestId: string) {
   throw new Error("页面播放器连接超时");
 }
 async function advance(videoId: string, eventId: string) {
-  if (!panelOpen()) return;
   if (ended.has(eventId)) return;
   ended.add(eventId);
   if (ended.size > 100) ended.clear();
@@ -128,7 +123,7 @@ async function fetchTrackCovers(videoIds: string[]) {
   await Promise.all(Array.from({ length: Math.min(6, ids.length) }, worker));
   return covers;
 }
-chrome.runtime.onMessage.addListener((m: Command, _sender, reply) => {
+chrome.runtime.onMessage.addListener((m: Command, sender, reply) => {
   if (m.type === "FETCH_TRACK_COVERS") {
     fetchTrackCovers(m.videoIds)
       .then((covers) => reply({ ok: true, covers }))
@@ -141,15 +136,51 @@ chrome.runtime.onMessage.addListener((m: Command, _sender, reply) => {
       .catch((e) => reply({ ok: false, error: String(e) }));
     return true;
   }
+  if (m.type === "CONTROL_PLAYER") {
+    getBoundTabId()
+      .then((tabId) => {
+        if (tabId === undefined) throw new Error("尚未绑定标签页");
+        return chrome.tabs.sendMessage(tabId, {
+          type: "PLAYER_COMMAND",
+          command: m.command,
+          value: m.value,
+          muted: m.muted,
+        });
+      })
+      .then(reply)
+      .catch((error) => reply({ ok: false, error: String(error) }));
+    return true;
+  }
+  if (m.type === "GET_BOUND_METADATA") {
+    getBoundTabId()
+      .then((tabId) => {
+        if (tabId === undefined) throw new Error("尚未绑定标签页");
+        return chrome.tabs.sendMessage(tabId, {
+          type: m.collection ? "GET_COLLECTION_METADATA" : "GET_METADATA",
+        });
+      })
+      .then((data) => reply({ ok: true, data }))
+      .catch((error) => reply({ ok: false, error: String(error) }));
+    return true;
+  }
   if (m.type === "VIDEO_ENDED") {
-    advance(m.videoId, m.eventId);
+    getBoundTabId().then((tabId) => {
+      if (tabId !== undefined && sender.tab?.id === tabId)
+        advance(m.videoId, m.eventId);
+    });
+  }
+  if (m.type === "CONTENT_PLAYER_STATE") {
+    getBoundTabId().then((tabId) => {
+      if (tabId !== undefined && sender.tab?.id === tabId)
+        chrome.runtime
+          .sendMessage({ ...m, type: "PLAYER_STATE" })
+          .catch(() => {});
+    });
   }
 });
 chrome.tabs.onRemoved.addListener(async (id) => {
-  const s = await loadState();
-  if (s.managedTabId === id) {
-    delete s.managedTabId;
-    await saveState(s);
+  if ((await getBoundTabId()) === id) {
+    await setBoundTabId();
     chrome.runtime
       .sendMessage({ type: "PLAYER_STATE", status: "disconnected" })
       .catch(() => {});

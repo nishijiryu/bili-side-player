@@ -27,7 +27,6 @@ export type AppState = {
   currentPlaylistId: string;
   currentTrackId?: string;
   settings: Settings;
-  managedTabId?: number;
 };
 export type PlayerState = {
   status:
@@ -47,8 +46,16 @@ export type Command =
     }
   | { type: "GET_METADATA" }
   | { type: "GET_COLLECTION_METADATA" }
+  | { type: "CONTENT_PLAYER_STATE" }
   | { type: "PLAYER_STATE" }
   | { type: "TRACK_CHANGED"; trackId: string }
   | { type: "FETCH_TRACK_COVERS"; videoIds: string[] }
   | { type: "PLAY_TRACK"; track: Track; requestId: string }
+  | {
+      type: "CONTROL_PLAYER";
+      command: "play" | "pause" | "seek" | "volume";
+      value?: number;
+      muted?: boolean;
+    }
+  | { type: "GET_BOUND_METADATA"; collection?: boolean }
   | { type: "VIDEO_ENDED"; videoId: string; eventId: string };

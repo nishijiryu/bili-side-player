@@ -100,7 +100,7 @@ function collectionMetadata() {
 function report(v: HTMLVideoElement, status?: string) {
   chrome.runtime
     .sendMessage({
-      type: "PLAYER_STATE",
+      type: "CONTENT_PLAYER_STATE",
       status: status ?? (v.ended ? "ended" : v.paused ? "paused" : "playing"),
       currentTime: v.currentTime,
       duration: Number.isFinite(v.duration) ? v.duration : 0,
