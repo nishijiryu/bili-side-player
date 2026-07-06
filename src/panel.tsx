@@ -27,6 +27,11 @@ function App() {
     tracks: TrackDraft[];
   } | null>(null);
   const [targetPlaylistIds, setTargetPlaylistIds] = useState<string[]>([]);
+  const [pageTrack, setPageTrack] = useState<{
+    title: string;
+    uploader?: string;
+    coverUrl?: string;
+  } | null>(null);
   const trackListRef = useRef<HTMLOListElement>(null);
   const requestedCovers = useRef(new Set<string>());
   const p =
@@ -37,6 +42,15 @@ function App() {
       setS(x);
       setReady(true);
     });
+    chrome.runtime
+      .sendMessage({ type: "GET_BOUND_SNAPSHOT" })
+      .then((response: any) => {
+        if (!response?.ok) return;
+        if (response.metadata) setPageTrack(response.metadata);
+        if (response.player)
+          setPlayer((current) => ({ ...current, ...response.player }));
+      })
+      .catch(() => {});
   }, []);
   useEffect(() => {
     if (ready) saveState(s).catch((e) => setNotice(String(e)));
@@ -55,8 +69,10 @@ function App() {
             },
           }));
       }
-      if (m.type === "TRACK_CHANGED")
+      if (m.type === "TRACK_CHANGED") {
+        setPageTrack(null);
         setS((state) => ({ ...state, currentTrackId: m.trackId }));
+      }
     };
     chrome.runtime.onMessage.addListener(f);
     return () => chrome.runtime.onMessage.removeListener(f);
@@ -168,6 +184,7 @@ function App() {
     );
   };
   const play = (t: Track) => {
+    setPageTrack(null);
     update((x) => (x.currentTrackId = t.id));
     chrome.runtime
       .sendMessage({ type: "PLAY_TRACK", track: t, requestId: uid() })
@@ -196,6 +213,7 @@ function App() {
     [p, search],
   );
   if (!ready) return <main>正在恢复本地歌单…</main>;
+  const displayedTrack = pageTrack ?? track;
   return (
     <main>
       <header>
@@ -203,14 +221,14 @@ function App() {
         <span className={`status ${player.status}`}>{player.status}</span>
       </header>
       <section className="now">
-        {track?.coverUrl ? (
-          <img src={track.coverUrl} />
+        {displayedTrack?.coverUrl ? (
+          <img src={displayedTrack.coverUrl} referrerPolicy="no-referrer" />
         ) : (
           <div className="cover">♪</div>
         )}
         <div>
-          <strong>{track?.title || "尚未选择曲目"}</strong>
-          <small>{track?.uploader || "从下方添加视频"}</small>
+          <strong>{displayedTrack?.title || "尚未选择曲目"}</strong>
+          <small>{displayedTrack?.uploader || "从下方添加视频"}</small>
         </div>
       </section>
       <section className="controls">

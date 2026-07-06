@@ -46,6 +46,7 @@ export type Command =
     }
   | { type: "GET_METADATA" }
   | { type: "GET_COLLECTION_METADATA" }
+  | { type: "GET_PLAYER_SNAPSHOT" }
   | { type: "CONTENT_PLAYER_STATE" }
   | { type: "PLAYER_STATE" }
   | { type: "TRACK_CHANGED"; trackId: string }
@@ -58,4 +59,5 @@ export type Command =
       muted?: boolean;
     }
   | { type: "GET_BOUND_METADATA"; collection?: boolean }
+  | { type: "GET_BOUND_SNAPSHOT" }
   | { type: "VIDEO_ENDED"; videoId: string; eventId: string };

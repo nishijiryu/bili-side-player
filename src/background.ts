@@ -163,6 +163,28 @@ chrome.runtime.onMessage.addListener((m: Command, sender, reply) => {
       .catch((error) => reply({ ok: false, error: String(error) }));
     return true;
   }
+  if (m.type === "GET_BOUND_SNAPSHOT") {
+    getBoundTabId()
+      .then(async (tabId) => {
+        if (tabId === undefined) throw new Error("尚未绑定标签页");
+        const [rawMetadata, player] = await Promise.all([
+          chrome.tabs.sendMessage(tabId, { type: "GET_METADATA" }),
+          chrome.tabs.sendMessage(tabId, { type: "GET_PLAYER_SNAPSHOT" }),
+        ]);
+        let metadata = rawMetadata;
+        if (metadata && !metadata.coverUrl && metadata.id) {
+          const covers = await fetchTrackCovers([metadata.id]);
+          metadata = {
+            ...metadata,
+            coverUrl: covers[String(metadata.id).toLowerCase()],
+          };
+        }
+        return { metadata, player };
+      })
+      .then((data) => reply({ ok: true, ...data }))
+      .catch((error) => reply({ ok: false, error: String(error) }));
+    return true;
+  }
   if (m.type === "VIDEO_ENDED") {
     getBoundTabId().then((tabId) => {
       if (tabId !== undefined && sender.tab?.id === tabId)

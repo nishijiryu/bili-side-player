@@ -15,8 +15,27 @@ function parsePageUrl(raw: string) {
 }
 const findVideo = () => document.querySelector<HTMLVideoElement>("video");
 const boundVideos = new WeakSet<HTMLVideoElement>();
+function playerSnapshot(v: HTMLVideoElement) {
+  return {
+    status: v.ended ? "ended" : v.paused ? "paused" : "playing",
+    currentTime: v.currentTime,
+    duration: Number.isFinite(v.duration) ? v.duration : 0,
+    volume: v.volume,
+    muted: v.muted,
+  };
+}
 function metadata() {
   const parsed = parsePageUrl(location.href);
+  const coverUrl = [
+    'meta[property="og:image"]',
+    'meta[itemprop="image"]',
+    'meta[name="twitter:image"]',
+  ]
+    .map(
+      (selector) =>
+        document.querySelector<HTMLMetaElement>(selector)?.content,
+    )
+    .find(Boolean);
   return (
     parsed && {
       ...parsed,
@@ -25,9 +44,9 @@ function metadata() {
         document.title.replace(/_哔哩哔哩.*$/, ""),
       uploader:
         document.querySelector<HTMLElement>(".up-name,.username")?.innerText,
-      coverUrl: document.querySelector<HTMLMetaElement>(
-        'meta[property="og:image"]',
-      )?.content,
+      coverUrl: coverUrl
+        ? new URL(coverUrl, location.href).href.replace(/^http:/, "https:")
+        : undefined,
     }
   );
 }
@@ -101,11 +120,8 @@ function report(v: HTMLVideoElement, status?: string) {
   chrome.runtime
     .sendMessage({
       type: "CONTENT_PLAYER_STATE",
-      status: status ?? (v.ended ? "ended" : v.paused ? "paused" : "playing"),
-      currentTime: v.currentTime,
-      duration: Number.isFinite(v.duration) ? v.duration : 0,
-      volume: v.volume,
-      muted: v.muted,
+      ...playerSnapshot(v),
+      ...(status ? { status } : {}),
     })
     .catch(() => {});
 }
@@ -153,6 +169,11 @@ chrome.runtime.onMessage.addListener((m: any, _s, reply) => {
   }
   if (m.type === "GET_COLLECTION_METADATA") {
     reply(collectionMetadata());
+    return;
+  }
+  if (m.type === "GET_PLAYER_SNAPSHOT") {
+    const v = findVideo();
+    reply(v ? playerSnapshot(v) : null);
     return;
   }
   if (m.type === "PLAYER_COMMAND") {
