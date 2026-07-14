@@ -14,6 +14,28 @@ function parsePageUrl(raw: string) {
   }
 }
 const findVideo = () => document.querySelector<HTMLVideoElement>("video");
+const findWebFullscreenButton = () =>
+  document.querySelector<HTMLElement>(
+    '.bpx-player-ctrl-web,[aria-label="网页全屏"]',
+  );
+const isWebFullscreen = () =>
+  document.body.classList.contains("webscreen-fix") ||
+  findWebFullscreenButton()?.classList.contains("bpx-state-entered") === true;
+
+async function enterWebFullscreen() {
+  if (isWebFullscreen()) return { ok: true };
+  for (let i = 0; i < 50; i++) {
+    const button = findWebFullscreenButton();
+    if (button) {
+      button.click();
+      return isWebFullscreen()
+        ? { ok: true }
+        : { ok: false, error: "网页全屏未能开启" };
+    }
+    await new Promise((resolve) => setTimeout(resolve, 100));
+  }
+  return { ok: false, error: "未找到网页全屏按钮" };
+}
 const boundVideos = new WeakSet<HTMLVideoElement>();
 function playerSnapshot(v: HTMLVideoElement) {
   return {
@@ -177,6 +199,14 @@ chrome.runtime.onMessage.addListener((m: any, _s, reply) => {
     const v = findVideo();
     reply(v ? playerSnapshot(v) : null);
     return;
+  }
+  if (m.type === "GET_WEB_FULLSCREEN") {
+    reply({ active: isWebFullscreen() });
+    return;
+  }
+  if (m.type === "ENTER_WEB_FULLSCREEN") {
+    enterWebFullscreen().then(reply);
+    return true;
   }
   if (m.type === "PLAYER_COMMAND") {
     const v = findVideo();

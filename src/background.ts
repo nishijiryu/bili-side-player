@@ -30,10 +30,20 @@ async function play(track: any, requestId: string = crypto.randomUUID()) {
   const state = await loadState();
   const tabId = await getBoundTabId();
   if (tabId === undefined) throw new Error("请先点击扩展图标绑定当前标签页");
+  let restoreWebFullscreen = false;
   try {
     const current = await chrome.tabs.get(tabId);
-    if (!isSameVideoEntry(current.url, track.url))
+    if (!isSameVideoEntry(current.url, track.url)) {
+      try {
+        const displayMode = await chrome.tabs.sendMessage(tabId, {
+          type: "GET_WEB_FULLSCREEN",
+        });
+        restoreWebFullscreen = displayMode?.active === true;
+      } catch {
+        // The previous page may not have a connected content script.
+      }
       await chrome.tabs.update(tabId, { url: track.url });
+    }
   } catch {
     await setBoundTabId();
     throw new Error("绑定的标签页已关闭，请重新点击扩展图标绑定");
@@ -46,6 +56,15 @@ async function play(track: any, requestId: string = crypto.randomUUID()) {
   await waitReady(tabId, track.url, requestId);
   if (requestId !== latestRequest) return;
   try {
+    if (restoreWebFullscreen) {
+      try {
+        await chrome.tabs.sendMessage(tabId, {
+          type: "ENTER_WEB_FULLSCREEN",
+        });
+      } catch {
+        // Display-mode restoration should not prevent the next video playing.
+      }
+    }
     const result = await chrome.tabs.sendMessage(tabId, {
       type: "PLAYER_COMMAND",
       command: "play",

@@ -250,6 +250,14 @@ button:disabled {
   min-width: 0;
   font-weight: 600;
 }
+.playlist-quick-actions {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+.playlist-quick-actions button {
+  flex: 1;
+}
 .playlist-tools {
   flex: 0 0 auto;
   margin: 0 0 5px;
@@ -302,6 +310,7 @@ ol {
 }
 .playlist-section > .row,
 .playlist-section > .playlist-heading,
+.playlist-section > .playlist-quick-actions,
 .playlist-section > .playlist-tools,
 .playlist-section > .search {
   flex: 0 0 auto;

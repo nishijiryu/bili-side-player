@@ -48,6 +48,8 @@ export type Command =
   | { type: "GET_METADATA" }
   | { type: "GET_COLLECTION_METADATA" }
   | { type: "GET_PLAYER_SNAPSHOT" }
+  | { type: "GET_WEB_FULLSCREEN" }
+  | { type: "ENTER_WEB_FULLSCREEN" }
   | { type: "CONTENT_PLAYER_STATE" }
   | { type: "PLAYER_STATE" }
   | { type: "TRACK_CHANGED"; trackId: string }

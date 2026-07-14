@@ -361,6 +361,43 @@ function App() {
             ))}
           </select>
         </div>
+        <div className="playlist-quick-actions">
+          <button
+            onClick={async () => {
+              try {
+                const response = await chrome.runtime.sendMessage({
+                  type: "GET_BOUND_METADATA",
+                });
+                const m = response?.data;
+                m
+                  ? add(m.url, m.title, m)
+                  : setNotice("当前页不是支持的视频页");
+              } catch {
+                setNotice("请先打开 Bilibili 视频页");
+              }
+            }}
+          >
+            添加当前视频
+          </button>
+          <button
+            onClick={async () => {
+              try {
+                const response = await chrome.runtime.sendMessage({
+                  type: "GET_BOUND_METADATA",
+                  collection: true,
+                });
+                const collection = response?.data;
+                if (!collection?.tracks?.length)
+                  return setNotice("当前页面未检测到视频合集或多 P 列表");
+                prepareAdd(collection.tracks, collection.title);
+              } catch {
+                setNotice("请先打开包含合集的 Bilibili 视频页");
+              }
+            }}
+          >
+            添加当前合集
+          </button>
+        </div>
         <details className="foldout playlist-tools">
           <summary>
             歌单工具
@@ -409,41 +446,6 @@ function App() {
             </button>
           </div>
           <div className="tool-group">
-            <button
-              onClick={async () => {
-                try {
-                  const response = await chrome.runtime.sendMessage({
-                    type: "GET_BOUND_METADATA",
-                  });
-                  const m = response?.data;
-                  m
-                    ? add(m.url, m.title, m)
-                    : setNotice("当前页不是支持的视频页");
-                } catch {
-                  setNotice("请先打开 Bilibili 视频页");
-                }
-              }}
-            >
-              添加当前视频
-            </button>
-            <button
-              onClick={async () => {
-                try {
-                  const response = await chrome.runtime.sendMessage({
-                    type: "GET_BOUND_METADATA",
-                    collection: true,
-                  });
-                  const collection = response?.data;
-                  if (!collection?.tracks?.length)
-                    return setNotice("当前页面未检测到视频合集或多 P 列表");
-                  prepareAdd(collection.tracks, collection.title);
-                } catch {
-                  setNotice("请先打开包含合集的 Bilibili 视频页");
-                }
-              }}
-            >
-              添加当前合集
-            </button>
             <button
               onClick={() => {
                 const u = prompt("粘贴 Bilibili 视频 URL");
