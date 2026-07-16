@@ -144,6 +144,7 @@ function report(v: HTMLVideoElement, status?: string) {
     .sendMessage({
       type: "CONTENT_PLAYER_STATE",
       ...playerSnapshot(v),
+      metadata: metadata(),
       ...(status ? { status } : {}),
     })
     .catch(() => {});

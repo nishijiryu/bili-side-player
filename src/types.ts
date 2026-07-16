@@ -38,6 +38,13 @@ export type PlayerState = {
   playbackRate: number;
   message?: string;
 };
+export type PageVideo = {
+  id: string;
+  url: string;
+  title: string;
+  uploader?: string;
+  coverUrl?: string;
+};
 export type Command =
   | {
       type: "PLAYER_COMMAND";

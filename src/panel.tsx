@@ -4,7 +4,7 @@ import "./style.css";
 import { defaults, importPlaylists, loadState, saveState } from "./storage";
 import { parseBilibiliUrl } from "./url";
 import { nextIndex } from "./queue";
-import type { AppState, PlayerState, Track } from "./types";
+import type { AppState, PageVideo, PlayerState, Track } from "./types";
 type TrackDraft = Omit<Track, "id" | "createdAt">;
 const uid = () => crypto.randomUUID(),
   now = () => new Date().toISOString(),
@@ -28,11 +28,7 @@ function App() {
     tracks: TrackDraft[];
   } | null>(null);
   const [targetPlaylistIds, setTargetPlaylistIds] = useState<string[]>([]);
-  const [pageTrack, setPageTrack] = useState<{
-    title: string;
-    uploader?: string;
-    coverUrl?: string;
-  } | null>(null);
+  const [pageTrack, setPageTrack] = useState<PageVideo | null>(null);
   const trackListRef = useRef<HTMLOListElement>(null);
   const requestedCovers = useRef(new Set<string>());
   const p =
@@ -43,16 +39,36 @@ function App() {
       setS(x);
       setReady(true);
     });
-    chrome.runtime
-      .sendMessage({ type: "GET_BOUND_SNAPSHOT" })
-      .then((response: any) => {
-        if (!response?.ok) return;
-        if (response.metadata) setPageTrack(response.metadata);
-        if (response.player)
-          setPlayer((current) => ({ ...current, ...response.player }));
-      })
-      .catch(() => {});
   }, []);
+  useEffect(() => {
+    if (!ready) return;
+    let cancelled = false;
+    let retryTimer: ReturnType<typeof setTimeout> | undefined;
+    const syncCurrentVideo = async (attempt = 0) => {
+      let complete = false;
+      try {
+        const response: any = await chrome.runtime.sendMessage({
+          type: "GET_BOUND_SNAPSHOT",
+        });
+        if (cancelled) return;
+        if (response?.ok) {
+          if (response.metadata) setPageTrack(response.metadata);
+          if (response.player)
+            setPlayer((current) => ({ ...current, ...response.player }));
+          complete = Boolean(response.metadata && response.player);
+        }
+      } catch {
+        // The content script or player may still be loading.
+      }
+      if (!cancelled && !complete && attempt < 20)
+        retryTimer = setTimeout(() => syncCurrentVideo(attempt + 1), 300);
+    };
+    syncCurrentVideo();
+    return () => {
+      cancelled = true;
+      if (retryTimer) clearTimeout(retryTimer);
+    };
+  }, [ready]);
   useEffect(() => {
     if (ready) saveState(s).catch((e) => setNotice(String(e)));
   }, [s, ready]);
@@ -60,6 +76,7 @@ function App() {
     const f = (m: any) => {
       if (m.type === "PLAYER_STATE") {
         setPlayer((x) => ({ ...x, ...m }));
+        if (m.metadata) setPageTrack(m.metadata);
         if (typeof m.volume === "number" && typeof m.muted === "boolean")
           setS((state) => ({
             ...state,
